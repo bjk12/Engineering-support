@@ -13,25 +13,23 @@ denglu::denglu(QWidget *parent) :
                            Qt::WindowMinimizeButtonHint|
                            Qt::WindowCloseButtonHint)
                    );
-        QSettings *reg=new QSettings("HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\bjk",QSettings::NativeFormat);
-//      QStringList val = reg->allKeys();// 如果此键不存在，则返回的是空字符串
-        if(reg->contains("bjk9_name"))
-        {
-            QString bjk9_name=reg->value("bjk9_name").toString();
-            ui->name1->setText(bjk9_name);
+        QString readIP="";
+        QString readPort="";
+        QString readState="";
+        ReadInit(QString("./user.ini"),"IP", readIP);
+        ReadInit(QString("./user.ini"),"PORT", readPort);
+        ReadInit(QString("./user.ini"),"STATE", readState);
+        ui->jizhu_password->setChecked(false);
+        if(!readState.compare("checked")){
             ui->jizhu_password->setChecked(true);
         }
-        else
-            ui->jizhu_password->setChecked(false);
-        if(reg->contains("bjk9_password"))
-        {
-            QString bjk9_password=reg->value("bjk9_password").toString();
-            ui->password->setText(bjk9_password);
-        }
+        ui->name1->setText(readIP);
+        ui->password->setText(readPort);
+
 
         QString appName = QApplication::applicationName();//程序名称
         //换成 HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run则不需要管理员权限
-        reg=new QSettings("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run",QSettings::NativeFormat);
+        QSettings *reg=new QSettings("HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run",QSettings::NativeFormat);
         if(reg->contains(appName))
         {
             ui->auto_start->setChecked(true);
@@ -47,6 +45,37 @@ denglu::~denglu()
     delete ui;
 }
 
+void denglu::WriteInit(QString path, QString user_key, QString &user_value)
+{
+    if (!path.isEmpty() && !user_key.isEmpty())
+    {
+        //创建配置文件操作对象
+        QSettings *config = new QSettings(path, QSettings::IniFormat);
+
+        //将信息写入配置文件
+        config->beginGroup("config");
+        config->setValue(user_key, user_value);
+        config->endGroup();
+        delete config;
+
+    }
+}
+
+void denglu::ReadInit(QString path, QString user_key, QString &user_value)
+{
+    user_value = QString("");
+    if (!path.isEmpty() && !user_key.isEmpty())
+    {
+        //创建配置文件操作对象
+        QSettings *config = new QSettings(path, QSettings::IniFormat);
+
+        //读取用户配置信息
+        user_value = config->value(QString("config/") + user_key).toString();
+
+        delete config;
+    }
+}
+
 void denglu::on_okButton_clicked()
 {
     if(((ui->name1->text()==QString("启蒙"))&&(ui->password->text()==QString("321930")))||
@@ -57,32 +86,19 @@ void denglu::on_okButton_clicked()
         QMessageBox::about(this, "温馨提示", "身份确认，欢迎您使用本软件。");
         if(ui->jizhu_password->isChecked())
         {
-            QSettings *reg=new QSettings("HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\bjk",QSettings::NativeFormat);
-            if(reg->contains("bjk9_name"))
-            {
-                reg->remove("bjk9_name");
-            }
-            reg->setValue("bjk9_name",ui->name1->text());
-            if(reg->contains("bjk9_password"))
-            {
-                reg->remove("bjk9_password");
-            }
-            reg->setValue("bjk9_password",ui->password->text());
-            reg->deleteLater();
+            QString ip=ui->name1->text();
+            QString port=ui->password->text();
+            QString state="checked";
+            WriteInit(QString("./user.ini"),"IP",ip);
+            WriteInit(QString("./user.ini"),"PORT",port);
+            WriteInit(QString("./user.ini"),"STATE",state);
         }
         else
         {
-            QSettings *reg=new QSettings("HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\bjk",QSettings::NativeFormat);
-            reg->clear();
-//            if(reg->contains("bjk9_name"))
-//            {
-//                reg->remove("bjk9_name");
-//            }
-//            if(reg->contains("bjk9_password"))
-//            {
-//                reg->remove("bjk9_password");
-//            }
-            reg->deleteLater();
+            QString empty1=QString("");
+            WriteInit(QString("./user.ini"),"IP",empty1);
+            WriteInit(QString("./user.ini"),"PORT",empty1);
+            WriteInit(QString("./user.ini"),"STATE",empty1);
         }
         if(ui->auto_start->isChecked())
         {
@@ -90,7 +106,7 @@ void denglu::on_okButton_clicked()
             QString appName = QApplication::applicationName();//程序名称
             QString appPath = QApplication::applicationFilePath();// 程序路径
             appPath = appPath.replace("/","\\");
-            QSettings *reg=new QSettings("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run",QSettings::NativeFormat);
+            QSettings *reg=new QSettings("HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run",QSettings::NativeFormat);
             if(reg->contains(appName))
             {
                 reg->remove(appName);
@@ -103,7 +119,7 @@ void denglu::on_okButton_clicked()
             QString appName = QApplication::applicationName();//程序名称
             QString appPath = QApplication::applicationFilePath();// 程序路径
             appPath = appPath.replace("/","\\");
-            QSettings *reg=new QSettings("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run",QSettings::NativeFormat);
+            QSettings *reg=new QSettings("HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run",QSettings::NativeFormat);
             if(reg->contains(appName))
             {
                 reg->remove(appName);

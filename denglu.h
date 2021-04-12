@@ -15,6 +15,9 @@ public:
     explicit denglu(QWidget *parent = 0);
     ~denglu();
 
+    void WriteInit(QString path, QString user_key, QString &user_value);
+    void ReadInit(QString path, QString user_key, QString &user_value);
+
 private slots:
     void on_okButton_clicked();
 
